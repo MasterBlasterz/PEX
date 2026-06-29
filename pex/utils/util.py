@@ -243,22 +243,49 @@ def extract_sub_dict(prefix, dict):
 
 
 def get_env_and_dataset(env_name, max_episode_steps):
-    dataset = minari.load_dataset(env_name)
-    env  = dataset.recover_environment()
-    
+    dataset = minari.load_dataset(env_name, download=True)
+    env = dataset.recover_environment()
 
+    observations = []
+    actions = []
+    rewards = []
+    terminals = []
+    next_observations = []
+
+    for episode in dataset.iterate_episodes():
+        obs = episode.observations
+        act = episode.actions
+        rew = episode.rewards
+        term = episode.terminations
+
+        observations.append(obs[:-1])
+        actions.append(act)
+        rewards.append(rew)
+        terminals.append(term)
+        next_observations.append(obs[1:])
+
+    observations = np.concatenate(observations, axis=0)
+    actions = np.concatenate(actions, axis=0)
+    rewards = np.concatenate(rewards, axis=0)
+    terminals = np.concatenate(terminals, axis=0)
+    next_observations = np.concatenate(next_observations, axis=0)
 
     if any(s in env_name for s in ('halfcheetah', 'hopper', 'walker2d')):
-        # min_ret, max_ret = return_range(dataset, max_episode_steps)
-        # reward_transformer = lambda x: x * max_episode_steps / (max_ret - min_ret)
         reward_transformer = lambda x: x
     elif 'antmaze' in env_name:
         reward_transformer = lambda x: x - 1
+    else:
+        reward_transformer = lambda x: x
 
-    dataset['rewards'] = reward_transformer(dataset['rewards'])
+    rewards = reward_transformer(rewards)
 
-    for k, v in dataset.items():
-        dataset[k] = torchify(v)
+    dataset = {
+        "observations": torch.tensor(observations, dtype=torch.float32),
+        "actions": torch.tensor(actions),
+        "rewards": torch.tensor(rewards, dtype=torch.float32),
+        "terminals": torch.tensor(terminals),
+        "next_observations": torch.tensor(next_observations, dtype=torch.float32),
+    }
 
     return env, dataset, reward_transformer
 
