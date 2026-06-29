@@ -175,7 +175,7 @@ def set_seed(seed, env=None):
     np.random.seed(seed)
     random.seed(seed)
     if env is not None:
-        env.seed(seed)
+        env.reset(seed=seed)
 
 
 def _gen_dir_name():
