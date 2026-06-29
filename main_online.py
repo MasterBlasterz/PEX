@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import gym
-import d4rl
+import gymnasium as gym
+import minari
 import numpy as np
 import itertools
 import os

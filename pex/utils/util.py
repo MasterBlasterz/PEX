@@ -8,8 +8,8 @@ import random
 import string
 import sys
 
-import d4rl
-import gym
+import minari
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -243,8 +243,9 @@ def extract_sub_dict(prefix, dict):
 
 
 def get_env_and_dataset(env_name, max_episode_steps):
-    env = gym.make(env_name)
-    dataset = d4rl.qlearning_dataset(env)
+    dataset = minari.load_dataset(env_name)
+    env  = dataset.recover_environment()
+    
 
 
     if any(s in env_name for s in ('halfcheetah', 'hopper', 'walker2d')):
@@ -265,7 +266,7 @@ def get_env_and_dataset(env_name, max_episode_steps):
 def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
     eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
                                 for _ in range(n_eval_episodes)])
-    normalized_returns = d4rl.get_normalized_score(env_name, eval_returns) * 100.0
+    normalized_returns = minari.get_normalized_score(env_name, eval_returns) * 100.0
     print({
         'return mean': round(eval_returns.mean(), 1),
         'return std': round(eval_returns.std(), 1),
