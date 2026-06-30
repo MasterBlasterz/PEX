@@ -303,14 +303,14 @@ def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
 
 
 def evaluate_policy(env, agent, max_episode_steps, deterministic=True):
-    obs = env.reset()
+    obs, _ = env.reset()
     total_reward = 0.
     # for _ in range(max_episode_steps):
     done = False
     while not done:
         with torch.no_grad():
             action = agent.select_action(torchify(obs), evaluate=deterministic).detach().cpu().numpy()
-        next_obs, reward, done, info = env.step(action)
+        next_obs, reward, done, _, info = env.step(action)
         total_reward += reward
         obs = next_obs
     return total_reward
