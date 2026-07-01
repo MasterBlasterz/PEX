@@ -310,7 +310,8 @@ def evaluate_policy(env, agent, max_episode_steps, deterministic=True):
     while not done:
         with torch.no_grad():
             action = agent.select_action(torchify(obs), evaluate=deterministic).detach().cpu().numpy()
-        next_obs, reward, done, _, info = env.step(action)
+        next_obs, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
         total_reward += reward
         obs = next_obs
     return total_reward
