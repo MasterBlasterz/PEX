@@ -246,54 +246,22 @@ def get_env_and_dataset(env_name, max_episode_steps):
     dataset = minari.load_dataset(env_name, download=True)
     env = dataset.recover_environment()
 
-    observations = []
-    actions = []
-    rewards = []
-    terminals = []
-    next_observations = []
-
-    for episode in dataset.iterate_episodes():
-        obs = episode.observations
-        act = episode.actions
-        rew = episode.rewards
-        term = episode.terminations
-
-        observations.append(obs[:-1])
-        actions.append(act)
-        rewards.append(rew)
-        terminals.append(term)
-        next_observations.append(obs[1:])
-
-    observations = np.concatenate(observations, axis=0)
-    actions = np.concatenate(actions, axis=0)
-    rewards = np.concatenate(rewards, axis=0)
-    terminals = np.concatenate(terminals, axis=0)
-    next_observations = np.concatenate(next_observations, axis=0)
-
     if any(s in env_name for s in ('halfcheetah', 'hopper', 'walker2d')):
         reward_transformer = lambda x: x
     elif 'antmaze' in env_name:
         reward_transformer = lambda x: x - 1
-    else:
-        reward_transformer = lambda x: x
 
-    rewards = reward_transformer(rewards)
+    for episode in dataset:
+        episode.rewards[:] = reward_transformer(episode.rewards)
 
-    dataset = {
-        "observations": torch.tensor(observations, dtype=torch.float32),
-        "actions": torch.tensor(actions),
-        "rewards": torch.tensor(rewards, dtype=torch.float32),
-        "terminals": torch.tensor(terminals),
-        "next_observations": torch.tensor(next_observations, dtype=torch.float32),
-    }
 
     return env, dataset, reward_transformer
 
 
-def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
+def eval_policy(env, dataset, alg, max_episode_steps, n_eval_episodes):
     eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
                                 for _ in range(n_eval_episodes)])
-    normalized_returns = minari.get_normalized_score(env, eval_returns) * 100.0
+    normalized_returns = minari.get_normalized_score(dataset, eval_returns) * 100.0
     print({
         'return mean': round(eval_returns.mean(), 1),
         'return std': round(eval_returns.std(), 1),

@@ -22,8 +22,8 @@ def main(args):
 
 
     env, dataset, _ = get_env_and_dataset(args.env_name, args.max_episode_steps)
-    obs_dim = dataset['observations'].shape[1]
-    act_dim = dataset['actions'].shape[1]
+    obs_dim = dataset.observation_space.shape[0]
+    act_dim = dataset.action_space.shape[0]
 
     if args.seed is not None:
         set_seed(args.seed, env=env)
@@ -49,7 +49,7 @@ def main(args):
     for step in trange(args.num_steps):
         iql.update(**sample_batch(dataset, args.batch_size))
         if (step + 1) % args.eval_period == 0:
-            eval_policy(env, args.env_name, iql, args.max_episode_steps, args.eval_episode_num)
+            eval_policy(env, dataset, iql, args.max_episode_steps, args.eval_episode_num)
 
     torch.save(iql.state_dict(), args.log_dir + '/offline_ckpt')
 
