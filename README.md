@@ -24,6 +24,10 @@ Then run:
 CUDA_VISIABLE_DEVICES=0 python main_offline.py --log_dir=$root_dir/antmaze-large-play-v0_offline_run1 --env_name antmaze-large-play-v0 --tau 0.9 --beta 10.0
 ```
 
+```
+CUDA_VISIABLE_DEVICES=0 python main_offline.py --log_dir=$root_dir/antmaze-large-play-v0_offline_run1 --env_name antmaze-large-play-v0 --tau 0.9 --beta 10.0
+```
+
 ### Online Training
 First set the path to the offline checkpoint:
 ```
@@ -40,11 +44,22 @@ and then run
 CUDA_VISIABLE_DEVICES=0 python ./main_online.py --log_dir=$root_dir/antmaze-large-play-v0_run1_$algorithm --env_name=antmaze-large-play-v0 --tau 0.9 --beta 10.0 --ckpt_path=$path_to_offline_ckpt --eval_episode_num=100 --algorithm=$algorithm
 ```
 
+echo $LD_PRELOAD
+### Example
 
-### Example on Locomotion Task
+#### Set ENV Vars
+export PROJECT_PATH="/project/dl2026s/${USER}"
+mkdir -p $root_dir
+mkdir -p $PROJECT_PATH/{hf_cache,minari}
+
+export root_dir=$PROJECT_PATH/logs
+export HF_HOME=$PROJECT_PATH/hf_cache
+export HF_HUB_CACHE=$HF_HOME/hub
+export TRANSFORMERS_CACHE=$HF_HOME/transformers
+export MINARI_DATASETS_PATH=$PROJECT_PATH/minari
 
 ```
-CUDA_VISIABLE_DEVICES=0 python main_offline.py --log_dir=$root_dir/halfcheetah-random-v2_offline_run1 --env_name halfcheetah-random-v2 --tau 0.9 --beta 10.0
+CUDA_VISIBLE_DEVICES=0 python main_offline.py --env_name mujoco/halfcheetah/medium-v0 --tau 0.9 --beta 10.0 --eval_period 10 --log_dir=$root_dir/halfcheetah-random-v2_offline_run2
 
 path_to_offline_ckpt=$root_dir/halfcheetah-random-v2/offline_ckpt
 
