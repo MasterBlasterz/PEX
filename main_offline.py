@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import torch
 from tqdm import trange
+import wandb
 
 from pex.algorithms.iql import IQL
 from pex.networks.policy import GaussianPolicy
@@ -30,6 +31,7 @@ def main(args):
 
     if torch.cuda.is_available():
         set_default_device()
+        
 
     action_space = env.action_space
     policy = GaussianPolicy(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num, action_space=action_space, scale_distribution=False, state_dependent_std=False)
@@ -46,10 +48,48 @@ def main(args):
         discount=args.discount
     )
 
+    wandb.init(
+        entity="fryan-nr",
+        project="NR3",
+        name=f"NR3_{args.env_name}_{args.seed}_offline",
+        tags=["NR3", "calql", args.env_name, "medium-replay", str(args.seed)],
+        config={
+            "env_name": args.env_name,
+            "seed": args.seed,
+            "discount": args.discount,
+            "hidden_dim": args.hidden_dim,
+            "hidden_num": args.hidden_num,
+            "num_steps": args.num_steps,
+            "batch_size": args.batch_size,
+            "learning_rate": args.learning_rate,
+            "target_update_rate": args.target_update_rate,
+            "tau": args.tau,
+            "beta": args.beta,
+            "eval_period": args.eval_period,
+            "eval_episode_num": args.eval_episode_num,
+            "max_episode_steps": args.max_episode_steps
+        },
+    )
+
     for step in trange(args.num_steps):
         iql.update(**sample_batch(dataset, args.batch_size))
+        train_metrics = iql.state_dict()
+
+        if train_metrics is not None:
+            wandb.log(
+                {f"train/{k}": v for k, v in train_metrics.items()},
+                step=step,
+            )
+
         if (step + 1) % args.eval_period == 0:
-            eval_policy(env, args.env_name, iql, args.max_episode_steps, args.eval_episode_num)
+            eval_metrics = eval_policy(env, args.env_name, iql, args.max_episode_steps, args.eval_episode_num)
+            
+            if eval_metrics is not None:
+                wandb.log(
+                    {f"eval/{k}": v for k, v in eval_metrics.items()},
+                    step=step,
+                )
+            #print(f"Step {step + 1}/{args.num_steps} - Training metrics: {train_metrics}")
 
     torch.save(iql.state_dict(), args.log_dir + '/offline_ckpt')
 
