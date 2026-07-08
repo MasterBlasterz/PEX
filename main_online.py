@@ -104,6 +104,29 @@ def main(args):
             inv_temperature=args.inv_temperature,
         )
 
+    wandb.init(
+        entity="fryan-nr",
+        project="NR3",
+        name=f"NR3_{args.env_name}_{args.seed}_online_{args.algorithm}",
+        tags=["NR3", "calql", args.env_name, "medium-replay", str(args.seed)],
+        config={
+            "env_name": args.env_name,
+            "seed": args.seed,
+            "discount": args.discount,
+            "hidden_dim": args.hidden_dim,
+            "hidden_num": args.hidden_num,
+            "num_steps": args.num_steps,
+            "batch_size": args.batch_size,
+            "learning_rate": args.learning_rate,
+            "target_update_rate": args.target_update_rate,
+            "tau": args.tau,
+            "beta": args.beta,
+            "eval_period": args.eval_period,
+            "eval_episode_num": args.eval_episode_num,
+            "max_episode_steps": args.max_episode_steps
+        },
+    )
+
     memory = ReplayMemory(args.replay_size, args.seed)
 
     total_numsteps = 0
@@ -112,7 +135,7 @@ def main(args):
         episode_reward = 0
         episode_steps = 0
         done = False
-        state = env.reset()
+        state, info = env.reset()
 
         while not done:
             action = alg.select_action(torchify(state).to(DEFAULT_DEVICE)).detach().cpu().numpy()
@@ -120,7 +143,8 @@ def main(args):
                 for i in range(args.updates_per_step):
                     alg.update(*get_batch_from_dataset_and_buffer(dataset, memory, args.batch_size, double_buffer))
 
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
             episode_steps += 1
             total_numsteps += 1
             episode_reward += reward
@@ -135,7 +159,13 @@ def main(args):
             if total_numsteps % args.eval_period == 0 and args.eval is True:
 
                 print("Episode: {}, total env-steps: {}".format(i_episode, total_numsteps))
-                eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
+                eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
+
+                if eval_metrics is not None:
+                wandb.log(
+                    {f"eval/{k}": v for k, v in eval_metrics.items()},
+                    step=step,
+                )
 
         if total_numsteps > args.total_env_steps:
             break
