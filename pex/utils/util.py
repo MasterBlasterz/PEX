@@ -293,15 +293,14 @@ def get_env_and_dataset(env_name, max_episode_steps):
 def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
     eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
                                 for _ in range(n_eval_episodes)])
-    dataset = minari.load_dataset(env_name)
     normalized_returns = ((eval_returns - (-0.001)) / (4592.3 - (-0.001))) * 100.0
     #normalized_returns = minari.get_normalized_score(dataset,eval_returns) * 100.0
-    print({
+    return {
         'return mean': round(eval_returns.mean(), 1),
         'return std': round(eval_returns.std(), 1),
         'normalized return mean': round(normalized_returns.mean(), 1),
         'normalized return std': round(normalized_returns.std(), 1),
-    })
+    }
 
 
 def evaluate_policy(env, agent, max_episode_steps, deterministic=True):
