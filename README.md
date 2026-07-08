@@ -18,53 +18,49 @@ pip3 install -e .
 
 Set ```root_dir``` to the path where the experimental results will be saved.
 
-Then run:
-
-```
-CUDA_VISIABLE_DEVICES=0 python main_offline.py --log_dir=$root_dir/antmaze-large-play-v0_offline_run1 --env_name antmaze-large-play-v0 --tau 0.9 --beta 10.0
-```
-
-```
-CUDA_VISIABLE_DEVICES=0 python main_offline.py --log_dir=$root_dir/antmaze-large-play-v0_offline_run1 --env_name antmaze-large-play-v0 --tau 0.9 --beta 10.0
-```
-
-### Online Training
-First set the path to the offline checkpoint:
-```
-path_to_offline_ckpt=$root_dir/antmaze-large-play-v0_offline_run1/offline_ckpt
-```
-
-and select an algorithm:
-```
-algorithm=pex (or any other algorithms in [scratch, direct, buffer, pex])
-```
-
-and then run
-```
-CUDA_VISIABLE_DEVICES=0 python ./main_online.py --log_dir=$root_dir/antmaze-large-play-v0_run1_$algorithm --env_name=antmaze-large-play-v0 --tau 0.9 --beta 10.0 --ckpt_path=$path_to_offline_ckpt --eval_episode_num=100 --algorithm=$algorithm
-```
-
-echo $LD_PRELOAD
-### Example
 
 #### Set ENV Vars
+
 export PROJECT_PATH="/project/dl2026s/${USER}"
+export root_dir=$PROJECT_PATH/logs
+
 mkdir -p $root_dir
 mkdir -p $PROJECT_PATH/{hf_cache,minari}
 
-export root_dir=$PROJECT_PATH/logs
 export HF_HOME=$PROJECT_PATH/hf_cache
 export HF_HUB_CACHE=$HF_HOME/hub
 export TRANSFORMERS_CACHE=$HF_HOME/transformers
 export MINARI_DATASETS_PATH=$PROJECT_PATH/minari
 
-```
-CUDA_VISIBLE_DEVICES=0 python main_offline.py --env_name mujoco/halfcheetah/medium-v0 --tau 0.9 --beta 10.0 --eval_period 10 --log_dir=$root_dir/halfcheetah-random-v2_offline_run2
+Then choose the environment:
 
-path_to_offline_ckpt=$root_dir/halfcheetah-random-v2/offline_ckpt
-
-CUDA_VISIABLE_DEVICES=0 python ./main_online.py --log_dir=$root_dir/halfcheetah-random-v2_run1_$algorithm --env_name=halfcheetah-random-v2 --tau 0.9 --beta 10.0 --ckpt_path=$path_to_offline_ckpt --eval_episode_num=10 --algorithm=$algorithm
 ```
+export env_name=mujoco/walker2d/medium-v0
+export log_dir=$root_dir/walker2d_medium_v0_run1
+export num_steps=100
+```
+
+Then run:
+
+```
+CUDA_VISIBLE_DEVICES=0 python main_offline.py --log_dir=$log_dir --env_name=$env_name --tau 0.9 --beta 10.0 --eval_period 10 --num_steps $num_steps
+```
+
+### Online Training
+First set the path to the offline checkpoint:
+
+and select an algorithm:
+```
+export algorithm=pex (or any other algorithms in [scratch, direct, buffer, pex])
+```
+
+and then run
+```
+CUDA_VISIABLE_DEVICES=0 python ./main_online.py --log_dir=${log_dir}_online --env_name=$env_name --tau 0.9 --beta 10.0 --eval_episode_num=10 --algorithm=$algorithm --ckpt_path=$log_dir/offline_ckpt
+```
+
+echo $LD_PRELOAD
+
 
 
 ## Paper
