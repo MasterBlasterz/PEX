@@ -293,8 +293,17 @@ def get_env_and_dataset(env_name, max_episode_steps):
 def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
     eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
                                 for _ in range(n_eval_episodes)])
-    normalized_returns = ((eval_returns - (-0.001)) / (4592.3 - (-0.001))) * 100.0
-    #normalized_returns = minari.get_normalized_score(dataset,eval_returns) * 100.0
+    
+    if 'walker2d' in env_name:
+        ref_min, ref_max = 1.629, 4592.3
+    elif 'hopper' in env_name:
+        ref_min, ref_max = -20.272, 3234.3
+    elif 'halfcheetah' in env_name:
+        ref_min, ref_max = -280.178, 12135.0
+    else:
+        ref_min, ref_max = 0, 1
+        print(f"Warning: No reference min/max for environment {env_name}. Using 0 and 1 as default values.")
+    normalized_returns = ((eval_returns - ref_min) / (ref_max - ref_min)) * 100.0
     return {
         'return mean': round(eval_returns.mean(), 1),
         'return std': round(eval_returns.std(), 1),
