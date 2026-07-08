@@ -12,6 +12,16 @@ source .venv_pex/bin/activate
 pip3 install -e .
 ```
 
+## Installation (nr3)
+```
+git clone https://github.com/MasterBlasterz/PEX.git
+cd PEX
+conda create -n <ENV> python=3.11
+conda activate <ENV>
+pip install -e .
+```
+
+
 ## Train
 
 ### Offline Training
