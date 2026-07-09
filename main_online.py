@@ -7,6 +7,7 @@ import itertools
 import os
 import torch
 from tqdm import trange
+import wandb
 
 from pex.algorithms.pex import PEX
 from pex.algorithms.iql_online import IQL_online
@@ -112,18 +113,28 @@ def main(args):
         config={
             "env_name": args.env_name,
             "seed": args.seed,
+            "algorithm": args.algorithm,
+            "inv_temperature": args.inv_temperature,
             "discount": args.discount,
             "hidden_dim": args.hidden_dim,
             "hidden_num": args.hidden_num,
-            "num_steps": args.num_steps,
+            "total_env_steps": args.total_env_steps,
+            # "num_steps": args.num_steps,
             "batch_size": args.batch_size,
             "learning_rate": args.learning_rate,
             "target_update_rate": args.target_update_rate,
             "tau": args.tau,
             "beta": args.beta,
+            "eval": args.eval,
             "eval_period": args.eval_period,
             "eval_episode_num": args.eval_episode_num,
-            "max_episode_steps": args.max_episode_steps
+            "max_episode_steps": args.max_episode_steps,
+            "replay_size": args.replay_size,
+            "initial_collection_steps": args.initial_collection_steps,
+            "updates_per_step": args.updates_per_step,
+            "replay_size": args.replay_size,
+            "ckpt_path": args.ckpt_path,
+            "log_dir": args.log_dir,
         },
     )
 
@@ -162,10 +173,10 @@ def main(args):
                 eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
 
                 if eval_metrics is not None:
-                wandb.log(
-                    {f"eval/{k}": v for k, v in eval_metrics.items()},
-                    step=step,
-                )
+                    wandb.log(
+                        {f"eval/{k}": v for k, v in eval_metrics.items()},
+                        step=total_numsteps,
+                    )
 
         if total_numsteps > args.total_env_steps:
             break
