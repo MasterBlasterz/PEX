@@ -21,7 +21,10 @@ DEFAULT_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def set_default_device():
     """Set the default device.
     """
-    torch.set_default_tensor_type(torch.cuda.FloatTensor)
+    if torch.cuda.is_available():
+        torch.set_default_tensor_type(torch.cuda.FloatTensor)
+    else:
+        torch.set_default_tensor_type(torch.FloatTensor)
 
 
 def to_torch_device(x_np):
@@ -130,7 +133,7 @@ def sample_batch(dataset, batch_size):
     for v in dataset.values():
         assert len(v) == n, 'Dataset values must have same length'
     indices = torch.randint(low=0, high=n, size=(batch_size,), device=device)
-    return {k: v[indices].cuda() for k, v in dataset.items()}
+    return {k: v[indices].to(DEFAULT_DEVICE) for k, v in dataset.items()}
 
 
 def get_batch_from_buffer(memory, batch_size):
