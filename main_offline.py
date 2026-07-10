@@ -73,13 +73,15 @@ def main(args):
 
     for step in trange(args.num_steps):
         iql.update(**sample_batch(dataset, args.batch_size))
-        train_metrics = iql.state_dict()
 
-        if train_metrics is not None:
-            wandb.log(
-                {f"train/{k}": v for k, v in train_metrics.items()},
-                step=step,
-            )
+        # No logos
+        # train_metrics = iql.state_dict()
+
+        # if train_metrics is not None:
+        #     wandb.log(
+        #         {f"train/{k}": v for k, v in train_metrics.items()},
+        #         step=step,
+        #     )
 
         if (step + 1) % args.eval_period == 0:
             eval_metrics = eval_policy(env, args.env_name, iql, args.max_episode_steps, args.eval_episode_num)
