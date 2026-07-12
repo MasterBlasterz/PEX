@@ -18,6 +18,7 @@ import torch.distributions as td
 
 DEFAULT_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+
 def set_default_device():
     """Set the default device.
     """
@@ -296,17 +297,23 @@ def get_env_and_dataset(env_name, max_episode_steps):
 def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
     eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
                                 for _ in range(n_eval_episodes)])
-    
+
+    # source: https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/infos.py
     if 'walker2d' in env_name:
-        ref_min, ref_max = 1.629, 4592.3
+        ref_min, ref_max = 1.629008, 4592.3
     elif 'hopper' in env_name:
-        ref_min, ref_max = -20.272, 3234.3
+        ref_min, ref_max = -20.272305, 3234.3
     elif 'halfcheetah' in env_name:
-        ref_min, ref_max = -280.178, 12135.0
+        ref_min, ref_max = -280.178953, 12135.0
     else:
         ref_min, ref_max = 0, 1
         print(f"Warning: No reference min/max for environment {env_name}. Using 0 and 1 as default values.")
-    normalized_returns = ((eval_returns - ref_min) / (ref_max - ref_min)) * 100.0
+
+    def get_normalized_score(returns, ref_min, ref_max):
+        return 100.0 * (returns - ref_min) / (ref_max - ref_min)
+
+    normalized_returns = get_normalized_score(eval_returns, ref_min, ref_max)
+
     return {
         'return mean': round(eval_returns.mean(), 1),
         'return std': round(eval_returns.std(), 1),
