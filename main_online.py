@@ -7,6 +7,8 @@ import itertools
 import os
 import torch
 from tqdm import trange
+
+import random
 import wandb
 
 from pex.algorithms.pex import PEX
@@ -150,8 +152,23 @@ def main(args):
         done = False
         state, info = env.reset()
 
+        # jk59: per episode counter
+        offline_policy_count = 0
+        online_policy_count = 0
         while not done:
-            action = alg.select_action(torchify(state).to(DEFAULT_DEVICE)).detach().cpu().numpy()
+            if algorithm_option == "PEX":
+                action, choice = alg.select_action(
+                    torchify(state).to(DEFAULT_DEVICE),
+                    return_policy_selection=True
+                )
+                if choice == 0:
+                    offline_policy_count += 1
+                else:
+                    online_policy_count += 1
+            else:
+                action = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
+            action = action.detach().cpu().numpy()
+
             if len(memory) > args.initial_collection_steps:
                 for i in range(args.updates_per_step):
                     alg.update(*get_batch_from_dataset_and_buffer(dataset, memory, args.batch_size, double_buffer))
@@ -170,7 +187,6 @@ def main(args):
             state = next_state
 
             if total_numsteps % args.eval_period == 0 and args.eval is True:
-
                 print("Episode: {}, total env-steps: {}".format(i_episode, total_numsteps))
                 eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
 
@@ -180,9 +196,22 @@ def main(args):
                         step=total_numsteps,
                     )
 
+        # jk59: log policy selection distribution for pex, for safety episode_steps > 0
+        if algorithm_option == "PEX" and episode_steps > 0:
+            offline_pct = (offline_policy_count / episode_steps) * 100.0
+            online_pct = (online_policy_count / episode_steps) * 100.0
+
+            wandb.log({
+                "pex/offline_policy_select_count": offline_policy_count,
+                "pex/online_policy_select_count": online_policy_count,
+                "pex/offline_policy_percentage": offline_pct,
+                "pex/online_policy_percentage": online_pct,
+                "train/episode_reward": episode_reward,
+                "train/episode_steps": episode_steps,
+            }, step=total_numsteps)
+
         if total_numsteps > args.total_env_steps:
             break
-
 
         env.close()
 

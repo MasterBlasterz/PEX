@@ -45,7 +45,9 @@ class PEX(IQL):
                 self.target_critic.load_state_dict(target_critic_state_dict)
 
 
-    def select_action(self, observations, evaluate=False, return_all_actions=False):
+    def select_action(self, observations, evaluate=False, return_all_actions=False, return_policy_selection=False):
+        is_batch = (observations.dim() == 2)
+
         observations = observations.unsqueeze(0)
         a1 = self.policy_offline.act(observations, deterministic=True)
 
@@ -67,11 +69,23 @@ class PEX(IQL):
         else:
             w = epsilon_greedy_sample(w_dist, eps=1.0)
 
+        # jk59: get selected policy (0 for offline, 1 for online)
+        if return_policy_selection:
+            policy_choice = w.cpu().tolist() if is_batch else int(w.item())
+
+
         w = w.unsqueeze(-1)
+
         action = (1 - w) * a1 + w * a2
 
         if not return_all_actions:
-            return action.squeeze(0)
+            if return_policy_selection:
+                return action.squeeze(0), policy_choice
+            else:
+                return action.squeeze(0)
+
+        elif return_policy_selection:
+            return action.squeeze(0), a1.squeeze(0), a2.squeeze(0), policy_choice
         else:
             return action.squeeze(0), a1.squeeze(0), a2.squeeze(0)
 
