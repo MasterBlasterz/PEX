@@ -15,7 +15,7 @@ setup(
         'torch==2.5.1',
         'gymnasium==1.3.0',
         'minari==0.5.2',
-        'mujoco==3.10.0',
+        'mujoco==3.2.3',
         'minari[all]',
         'imageio',
         'wandb',
