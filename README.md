@@ -53,8 +53,9 @@ export num_steps=100
 Then run:
 
 ```
-CUDA_VISIBLE_DEVICES=0 python main_offline.py --log_dir=$log_dir --env_name=$env_name --tau 0.9 --beta 10.0 --eval_period 10 --num_steps $num_steps
+CUDA_VISIBLE_DEVICES=0 python main_offline.py --log_dir=$log_dir --env_name=$env_name --tau 0.9 --beta 10.0 --num_steps $num_steps
 ```
+**NOTE**: For only a quick run add the arguments `--num-steps=<NUMSTEPS>` and `--eval_period=<EVALPERIOD>`.
 
 ### Online Training
 First set the path to the offline checkpoint:
