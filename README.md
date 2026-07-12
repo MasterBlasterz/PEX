@@ -21,6 +21,18 @@ conda activate <ENV>
 pip install -e .
 ```
 
+### Environment Changes
+New Minari Names:
+- mujoco/halfcheetah/random-v0
+- mujoco/halfcheetah/medium-v0
+- mujoco/halfcheetah/medium-replay-v0
+- mujoco/hopper/random-v0
+- mujoco/hopper/medium-v0
+- mujoco/hopper/medium-replay-v0
+- mujoco/walker2d/random-v0
+- mujoco/walker2d/medium-v0
+- mujoco/walker2d/medium-replay-v0
+
 
 ## Train
 
