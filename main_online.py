@@ -35,8 +35,10 @@ def main(args):
     obs_dim = dataset['observations'].shape[1]
     act_dim = dataset['actions'].shape[1]
 
-    if args.seed is not None:
-        set_seed(args.seed, env=env)
+
+    if args.seed is None:
+        args.seed = random.randrange(2**32)
+    set_seed(args.seed, env=env)
 
     if torch.cuda.is_available():
         set_default_device()

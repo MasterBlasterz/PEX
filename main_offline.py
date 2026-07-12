@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 import torch
 from tqdm import trange
+
+import random
 import wandb
 
 from pex.algorithms.iql import IQL
@@ -26,8 +28,9 @@ def main(args):
     obs_dim = dataset['observations'].shape[1]
     act_dim = dataset['actions'].shape[1]
 
-    if args.seed is not None:
-        set_seed(args.seed, env=env)
+    if args.seed is None:
+        args.seed = random.randrange(2**32)
+    set_seed(args.seed, env=env)
 
     if torch.cuda.is_available():
         set_default_device()
@@ -103,7 +106,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--env_name', required=True)
     parser.add_argument('--log_dir', required=True)
-    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--discount', type=float, default=0.99)
     parser.add_argument('--hidden_dim', type=int, default=256)
     parser.add_argument('--hidden_num', type=int, default=2)
