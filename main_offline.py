@@ -67,7 +67,9 @@ def main(args):
             "beta": args.beta,
             "eval_period": args.eval_period,
             "eval_episode_num": args.eval_episode_num,
-            "max_episode_steps": args.max_episode_steps
+            "max_episode_steps": args.max_episode_steps,
+            "is_cuda": torch.cuda.is_available(),
+            "log_dir": args.log_dir,
         },
     )
 

@@ -119,7 +119,6 @@ def main(args):
             "hidden_dim": args.hidden_dim,
             "hidden_num": args.hidden_num,
             "total_env_steps": args.total_env_steps,
-            # "num_steps": args.num_steps,
             "batch_size": args.batch_size,
             "learning_rate": args.learning_rate,
             "target_update_rate": args.target_update_rate,
@@ -134,6 +133,7 @@ def main(args):
             "updates_per_step": args.updates_per_step,
             "replay_size": args.replay_size,
             "ckpt_path": args.ckpt_path,
+            "is_cuda": torch.cuda.is_available(),
             "log_dir": args.log_dir,
         },
     )
