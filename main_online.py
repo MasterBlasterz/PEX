@@ -231,26 +231,26 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', type=float, default=3e-4)
     parser.add_argument('--target_update_rate', type=float, default=0.005)
     parser.add_argument('--tau', type=float, default=0.7)
-    parser.add_argument('--beta', type=float, default=10.0,
+    parser.add_argument('--beta', type=float, default=3.0,
                         help='IQL inverse temperature')
     parser.add_argument('--ckpt_path', default=None,
                     help='path to the offline checkpoint')
 
-    parser.add_argument('--replay_size', type=int, default=1000000, metavar='N',
-                        help='size of replay buffer (default: 10000000)')
-    parser.add_argument('--total_env_steps', type=int, default=1000001, metavar='N',
-                        help='total number of env steps (default: 1000000)')
-    parser.add_argument('--initial_collection_steps', type=int, default=5000, metavar='N',
-                        help='Initial environmental steps before training starts (default: 5000)')
+    parser.add_argument('--replay_size', type=int, default=1_000_000, metavar='N',
+                        help='size of replay buffer (default: 1_000_000)')
+    parser.add_argument('--total_env_steps', type=int, default=1_000_001, metavar='N',
+                        help='total number of env steps (default: 1_000_000)')
+    parser.add_argument('--initial_collection_steps', type=int, default=5_000, metavar='N',
+                        help='Initial environmental steps before training starts (default: 5_000)')
     parser.add_argument('--updates_per_step', type=int, default=1, metavar='N',
                         help='model updates per simulator step (default: 1)')
-    parser.add_argument('--inv_temperature', type=float, default=10, metavar='G',
-                        help='inverse temperature for PEX action selection (default: 10)')
+    parser.add_argument('--inv_temperature', type=float, default=3, metavar='G',
+                        help='inverse temperature for PEX action selection (default: 3)')
     parser.add_argument('--eval', type=bool, default=True,
                     help='Evaluates a policy a policy every 10 episode (default: True)')
-    parser.add_argument('--eval_period', type=int, default=10000)
+    parser.add_argument('--eval_period', type=int, default=10_000)
     parser.add_argument('--eval_episode_num', type=int, default=10,
                         help='Number of evaluation episodes (default: 10)')
-    parser.add_argument('--max_episode_steps', type=int, default=1000)
+    parser.add_argument('--max_episode_steps', type=int, default=1_000)
 
     main(parser.parse_args())

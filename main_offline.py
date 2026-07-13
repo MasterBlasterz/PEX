@@ -116,7 +116,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', type=float, default=3e-4)
     parser.add_argument('--target_update_rate', type=float, default=0.005)
     parser.add_argument('--tau', type=float, default=0.7)
-    parser.add_argument('--beta', type=float, default=10.0,
+    parser.add_argument('--beta', type=float, default=3.0,
                         help='IQL inverse temperature')
     parser.add_argument('--eval_period', type=int, default=10000)
     parser.add_argument('--eval_episode_num', type=int, default=10,
