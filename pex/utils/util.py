@@ -295,22 +295,32 @@ def get_env_and_dataset(env_name, max_episode_steps):
 
 
 def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
-    eval_returns = np.array([evaluate_policy(env, alg, max_episode_steps) \
-                                for _ in range(n_eval_episodes)])
+    fall_count = 0
+    eval_returns = []
+    for _ in range(n_eval_episodes):
+        eval_return, fall_count_episode = evaluate_policy(env, alg, max_episode_steps)
+        eval_returns.append(eval_return)
+        fall_count += fall_count_episode
+    
+    fall_count = (fall_count / n_eval_episodes) * 100.0
+    eval_returns = np.array(eval_returns)
 
     # source: https://github.com/Farama-Foundation/D4RL/blob/master/d4rl/infos.py
     if 'walker2d' in env_name:
         ref_min, ref_max = 1.629008, 4592.3
     elif 'hopper' in env_name:
-        ref_min, ref_max = -20.272305, 3234.3
+        ref_min, ref_max = 14.77, 3857.0
     elif 'halfcheetah' in env_name:
         ref_min, ref_max = -280.178953, 12135.0
+    elif 'humanoid' in env_name:
+        ref_min, ref_max = 108.59, 8602.85
     else:
         ref_min, ref_max = 0, 1
         print(f"Warning: No reference min/max for environment {env_name}. Using 0 and 1 as default values.")
 
     def get_normalized_score(returns, ref_min, ref_max):
         return 100.0 * (returns - ref_min) / (ref_max - ref_min)
+
 
     normalized_returns = get_normalized_score(eval_returns, ref_min, ref_max)
 
@@ -319,19 +329,23 @@ def eval_policy(env, env_name, alg, max_episode_steps, n_eval_episodes):
         'return std': round(eval_returns.std(), 1),
         'normalized return mean': round(normalized_returns.mean(), 1),
         'normalized return std': round(normalized_returns.std(), 1),
+        'fall count': fall_count,
     }
 
 
 def evaluate_policy(env, agent, max_episode_steps, deterministic=True):
     obs, _ = env.reset()
     total_reward = 0.
+    fall_count = 0
     # for _ in range(max_episode_steps):
     done = False
     while not done:
         with torch.no_grad():
             action = agent.select_action(torchify(obs), evaluate=deterministic).detach().cpu().numpy()
         next_obs, reward, terminated, truncated, info = env.step(action)
+        if terminated:
+            fall_count += 1
         done = terminated or truncated
         total_reward += reward
         obs = next_obs
-    return total_reward
+    return total_reward, fall_count

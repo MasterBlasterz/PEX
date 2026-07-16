@@ -145,6 +145,7 @@ def main(args):
     memory = ReplayMemory(args.replay_size, args.seed)
 
     total_numsteps = 0
+    fall_count = 0
 
     for i_episode in itertools.count(1):
         episode_reward = 0
@@ -174,6 +175,9 @@ def main(args):
                     alg.update(*get_batch_from_dataset_and_buffer(dataset, memory, args.batch_size, double_buffer))
 
             next_state, reward, terminated, truncated, info = env.step(action)
+
+            if terminated:
+                fall_count += 1
             done = terminated or truncated
             episode_steps += 1
             total_numsteps += 1
@@ -189,6 +193,7 @@ def main(args):
             if total_numsteps % args.eval_period == 0 and args.eval is True:
                 print("Episode: {}, total env-steps: {}".format(i_episode, total_numsteps))
                 eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
+                eval_metrics['fall_count_training'] = fall_count / episode_steps * 100.0
 
                 if eval_metrics is not None:
                     wandb.log(
