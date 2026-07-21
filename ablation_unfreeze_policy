@@ -1,0 +1,38 @@
+#!/bin/bash
+
+## Start config: halfcheetah medium on a poolgpu
+
+# IF PARALLEL on poolgpus
+is_cuda=true
+i_cuda=1
+
+# env
+env_name=mujoco/halfcheetah/medium-v0
+
+# offline ckpt_dir, ckpt_path, online log_dir
+ckpt_dir=${root_dir}/halfcheetah_medium_v0_run2
+ckpt_path=${ckpt_dir}/offline_ckpt
+
+log_dir_pre=${ckpt_dir}_online_abl_unfrozenoffpol
+
+# seeds
+seeds=($onseed1 $onseed2 $onseed3)
+
+## end config
+
+for seed in "${seeds[@]}";
+do
+    if [ "$is_cuda" = true ]; then
+        CUDA_VISIBLE_DEVICES=$i_cuda python main_online.py --log_dir="${log_dir_pre}_${inv_temp}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed &
+        if [ "$i_cuda" -lt 4 ]; then
+    	echo $i_cuda
+            i_cuda=$((i_cuda+1))
+        else
+    	i_cuda=1
+    	wait
+        fi
+    else
+        # WARNING: ELSE IS NOT TESTED YET
+        python main_online.py --log_dir="${log_dir_pre}_${inv_temp}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed
+    fi
+done
