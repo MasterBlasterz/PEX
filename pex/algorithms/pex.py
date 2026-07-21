@@ -20,7 +20,7 @@ class PEX(IQL):
 
         self.policy_offline = copy.deepcopy(self.policy).to(DEFAULT_DEVICE)
 
-        # Offline policy optimizer for pextemp (Offline Policy Freeze) ablation
+        # Offline policy optimizer for 'Offline Policy Freeze' ablation
         self.policy_offline_optimizer = optimizer_ctor(self.policy_offline.parameters())
 
         self._inv_temperature = inv_temperature
@@ -110,7 +110,7 @@ class PEX(IQL):
         policy_loss.backward()
         self.policy_optimizer.step()
 
-        # update offline policy for pextemp (Offline Policy Freeze) ablation
+        # update offline policy for 'Offline Policy Freeze' ablation
         policy_out_offline = self.policy_offline(observations)
         bc_losses_offline = -policy_out_offline.log_prob(actions.detach())
         policy_loss_offline = torch.mean(exp_adv * bc_losses_offline)
