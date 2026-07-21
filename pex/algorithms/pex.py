@@ -20,6 +20,9 @@ class PEX(IQL):
 
         self.policy_offline = copy.deepcopy(self.policy).to(DEFAULT_DEVICE)
 
+        # Offline policy optimizer for pextemp (Offline Policy Freeze) ablation
+        self.policy_offline_optimizer = optimizer_ctor(self.policy_offline.parameters())
+
         self._inv_temperature = inv_temperature
 
         # load checkpoint if ckpt_path is not None
@@ -97,6 +100,8 @@ class PEX(IQL):
         v = self.vf(observations)
         adv = target_q.detach() - v
         exp_adv = torch.exp(self.beta * adv.detach()).clamp(max=EXP_ADV_MAX)
+
+        # update online policy as in original pex implementation
         policy_out = self.policy(observations)
         bc_losses = -policy_out.log_prob(actions.detach())
 
@@ -104,5 +109,14 @@ class PEX(IQL):
         self.policy_optimizer.zero_grad(set_to_none=True)
         policy_loss.backward()
         self.policy_optimizer.step()
+
+        # update offline policy for pextemp (Offline Policy Freeze) ablation
+        policy_out_offline = self.policy_offline(observations)
+        bc_losses_offline = -policy_out_offline.log_prob(actions.detach())
+        policy_loss_offline = torch.mean(exp_adv * bc_losses_offline)
+        self.policy_offline_optimizer.zero_grad(set_to_none=True)
+        policy_loss_offline.backward()
+        self.policy_offline_optimizer.step()
+
         if self.use_lr_scheduler:
             self.policy_lr_schedule.step()
