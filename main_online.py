@@ -139,6 +139,7 @@ def main(args):
             "ckpt_path": args.ckpt_path,
             "is_cuda": torch.cuda.is_available(),
             "log_dir": args.log_dir,
+            "adaptive_comp": args.adaptive_comp,
         },
     )
 
@@ -160,7 +161,7 @@ def main(args):
             if algorithm_option == "PEX":
                 action, choice = alg.select_action(
                     torchify(state).to(DEFAULT_DEVICE),
-                    return_policy_selection=True
+                    return_policy_selection=True, adaptive_comp=args.adaptive_comp
                 )
                 if choice == 0:
                     offline_policy_count += 1
@@ -257,5 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_episode_num', type=int, default=10,
                         help='Number of evaluation episodes (default: 10)')
     parser.add_argument('--max_episode_steps', type=int, default=1_000)
+    parser.add_argument('--adaptive_comp', choices=['greedy','uni', 'hard'], default='greedy',
+                        help='Adaptive computation method (default: greedy)')
 
     main(parser.parse_args())

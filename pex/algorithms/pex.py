@@ -44,8 +44,16 @@ class PEX(IQL):
                 target_critic_state_dict = extract_sub_dict("target_critic", checkpoint)
                 self.target_critic.load_state_dict(target_critic_state_dict)
 
-
-    def select_action(self, observations, evaluate=False, return_all_actions=False, return_policy_selection=False):
+        
+    def select_action(self, observations, evaluate=False, return_all_actions=False,
+                       return_policy_selection=False, adaptive_comp='greedy'):
+        """
+        adaptive_comp:
+            'greedy' - value-weighted softmax composition (original PEX), sampled
+                       with epsilon-greedy exploration on top.
+            'uni'    - uniform distribution over {offline, online} policy, ignoring Q.
+            'hard'   - deterministic hard-max over Q(s, a_i); no stochastic mixing.
+        """
         is_batch = (observations.dim() == 2)
 
         observations = observations.unsqueeze(0)
@@ -61,18 +69,31 @@ class PEX(IQL):
         q2 = self.critic.min(observations, a2)
 
         q = torch.stack([q1, q2], dim=-1)
-        logits = q * self._inv_temperature
-        w_dist = torch.distributions.Categorical(logits=logits)
 
-        if evaluate:
-            w = epsilon_greedy_sample(w_dist, eps=0.1)
+        if adaptive_comp == 'greedy':
+            logits = q * self._inv_temperature
+            w_dist = torch.distributions.Categorical(logits=logits)
+            if evaluate:
+                w = epsilon_greedy_sample(w_dist, eps=0.1)
+            else:
+                w = epsilon_greedy_sample(w_dist, eps=1.0)
+
+        elif adaptive_comp == 'uni':
+            # Uniform 50/50 selection, ignoring Q entirely.
+            probs = torch.full_like(q, 0.5)
+            w_dist = torch.distributions.Categorical(probs=probs)
+            w = w_dist.sample()
+
+        elif adaptive_comp == 'hard':
+            # Deterministic argmax over Q, no stochastic mixing.
+            w = torch.argmax(q, dim=-1)
+
         else:
-            w = epsilon_greedy_sample(w_dist, eps=1.0)
+            raise ValueError(f"Unknown adaptive_comp mode: {adaptive_comp}")
 
         # jk59: get selected policy (0 for offline, 1 for online)
         if return_policy_selection:
             policy_choice = w.cpu().tolist() if is_batch else int(w.item())
-
 
         w = w.unsqueeze(-1)
 
