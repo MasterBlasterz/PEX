@@ -24,10 +24,10 @@ class IQL_online(IQL):
             checkpoint = torch.load(ckpt_path, map_location=map_location)
 
             # extract sub-dictionary
-            policy_state_dict = extract_sub_dict("policy", checkpoint)
+            # policy_state_dict = extract_sub_dict("policy", checkpoint)  # no policy transfer
             critic_state_dict = extract_sub_dict("critic", checkpoint)
 
-            self.policy.load_state_dict(policy_state_dict)
+            # self.policy.load_state_dict(policy_state_dict)  # no policy transfer
             self.critic.load_state_dict(critic_state_dict)
             if copy_to_target:
                 self.target_critic.load_state_dict(critic_state_dict)
