@@ -1,0 +1,44 @@
+#!/bin/bash
+
+## Start config: basic locomotion tasks with medium offline-pretraining on a poolgpu
+
+# IF PARALLEL on poolgpus
+is_cuda=true
+i_cuda=1
+N_cuda=5
+
+# env
+env_names=(mujoco/halfcheetah/medium-v0 mujoco/hopper/medium-v0 mujoco/walker2d/medium-v0)
+
+# offline ckpt_dir, ckpt_path, online log_dir
+ckpt_dirs=(${root_dir}/halfcheetah_medium_v0_run2 ${root_dir}/hopper_medium_v0_run3 ${root_dir}/walker2d_medium_v0_run5)
+
+# seeds
+seeds=($onseed1 $onseed2 $onseed3)
+
+## end config
+
+for i_env in {0..2};
+do
+    env_name=${env_names[$i_env]}
+    ckpt_dir=${ckpt_dirs[$i_env]}
+    ckpt_path=${ckpt_dir}/offline_ckpt
+    log_dir_pre=${ckpt_dir}_online_abl_uniform_pex_composition
+
+    for seed in "${seeds[@]}";
+    do
+        if [ "$is_cuda" = true ]; then
+            CUDA_VISIBLE_DEVICES=$i_cuda python main_online.py --log_dir="${log_dir_pre}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed --adaptive_comp uni &
+            if [ "$i_cuda" -lt "$N_cuda" ]; then
+                i_cuda=$((i_cuda+1))
+            else
+        	i_cuda=1
+        	wait
+            fi
+        else
+            # WARNING: ELSE IS NOT TESTED YET
+            echo python main_online.py --log_dir="${log_dir_pre}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed --adaptive_comp uni
+        fi
+    done
+done
+wait
