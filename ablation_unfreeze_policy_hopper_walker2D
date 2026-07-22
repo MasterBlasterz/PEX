@@ -1,0 +1,45 @@
+#!/bin/bash
+
+## Start config: hopper and walker2D medium on a poolgpu
+
+# IF PARALLEL on poolgpus
+is_cuda=true
+i_cuda=4
+
+# env
+env_names=(mujoco/hopper/medium-v0 mujoco/walker2d/medium-v0)
+
+# offline ckpt_dir, ckpt_path, online log_dir
+ckpt_dirs=(${root_dir}/hopper_medium_v0_run3 ${root_dir}/walker2d_medium_v0_run5)
+
+# seeds
+seeds=($onseed1 $onseed2 $onseed3)
+
+## end config
+
+for i_env in {0..1};
+do
+    env_name=${env_names[$i_env]}
+    ckpt_dir=${ckpt_dirs[$i_env]}
+    echo $env_name
+    echo $ckpt_dir
+    ckpt_path=${ckpt_dir}/offline_ckpt
+    log_dir_pre=${ckpt_dir}_online_abl_unfrozenoffpol
+
+    for seed in "${seeds[@]}";
+    do
+        if [ "$is_cuda" = true ]; then
+            CUDA_VISIBLE_DEVICES=$i_cuda python main_online.py --log_dir="${log_dir_pre}__${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed &
+            if [ "$i_cuda" -lt 6 ]; then
+        	echo $i_cuda
+                i_cuda=$((i_cuda+1))
+            else
+        	i_cuda=1
+        	wait
+            fi
+        else
+            # WARNING: ELSE IS NOT TESTED YET
+            python main_online.py --log_dir="${log_dir_pre}__${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed
+        fi
+    done
+done
