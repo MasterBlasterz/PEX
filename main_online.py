@@ -11,7 +11,7 @@ from tqdm import trange
 import random
 import wandb
 
-from pex.algorithms.pex import PEX
+from pex.algorithms.pex import PEXGrouped
 from pex.algorithms.iql_online import IQL_online
 from pex.networks.policy import GaussianPolicy
 from pex.networks.value_functions import DoubleCriticNetwork, ValueNetwork
@@ -19,6 +19,15 @@ from pex.utils.util import (
     set_seed, ReplayMemory, torchify, eval_policy, torchify, DEFAULT_DEVICE,
     get_batch_from_dataset_and_buffer,
     eval_policy, set_default_device, get_env_and_dataset)
+
+
+HUMANOID_JOINT_GROUPS = {
+    "abdomen": [0, 1, 2],                           # torso
+    "hip": [3, 4, 5, 7, 8, 9],                      # hips 
+    "knee": [6, 10],                                # knees
+    "shoulder": [11, 12, 14, 15],                   # shoulders
+    "elbow": [13, 16],                              # elbows
+}
 
 
 def main(args):
@@ -96,7 +105,7 @@ def main(args):
     elif algorithm_option == "PEX":
         double_buffer = True
         assert args.ckpt_path, "need to provide a valid checkpoint path"
-        alg = PEX(
+        alg = PEXGrouped(
             critic=DoubleCriticNetwork(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
             vf=ValueNetwork(obs_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
             policy=policy,
@@ -156,18 +165,27 @@ def main(args):
         # jk59: per episode counter
         offline_policy_count = 0
         online_policy_count = 0
+        
+        offline_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
+        online_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
+
         while not done:
             if algorithm_option == "PEX":
                 action, choice = alg.select_action(
                     torchify(state).to(DEFAULT_DEVICE),
                     return_policy_selection=True
                 )
-                if choice == 0:
-                    offline_policy_count += 1
-                else:
-                    online_policy_count += 1
+                offline_policy_count += sum(count == 0 for count in choice) / len(choice)
+                online_policy_count += sum(count != 0 for count in choice) / len(choice)
+
+                
+
+                for i, (group_name, indices) in enumerate(HUMANOID_JOINT_GROUPS.items()):
+                    offline_policy_count_grouped[group_name] += choice[i] == 0
+                    online_policy_count_grouped[group_name] += choice[i] != 0
+
             else:
-                action = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
+                action, _ = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
             action = action.detach().cpu().numpy()
 
             if len(memory) > args.initial_collection_steps:
@@ -194,6 +212,9 @@ def main(args):
                 print("Episode: {}, total env-steps: {}".format(i_episode, total_numsteps))
                 eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
                 eval_metrics['fall_count_training'] = fall_count / episode_steps * 100.0
+                for group_name in HUMANOID_JOINT_GROUPS.keys():
+                    eval_metrics[f'pex/offline_policy_percentage_{group_name}'] = (offline_policy_count_grouped[group_name] / episode_steps) * 100.0
+                    eval_metrics[f'pex/online_policy_percentage_{group_name}'] = (online_policy_count_grouped[group_name] / episode_steps) * 100.0
 
                 if eval_metrics is not None:
                     wandb.log(
