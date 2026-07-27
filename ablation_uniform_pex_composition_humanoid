@@ -1,0 +1,38 @@
+#!/bin/bash
+
+## Start config: humanoid with medium offline-pretraining on a poolgpu
+
+# IF PARALLEL on poolgpus
+is_cuda=true
+i_cuda=3
+N_cuda=5
+
+# env
+env_name=mujoco/humanoid/medium-v0
+
+# offline ckpt_dir, ckpt_path, online log_dir
+ckpt_dir=${root_dir}/humanoid_medium_v0_run1
+ckpt_path=${ckpt_dir}/offline_ckpt
+log_dir_pre=${ckpt_dir}_online_abl_uniform_pex_composition
+
+# seeds
+seeds=(2003530388 2454176472 4257710153)
+
+## end config
+
+for seed in "${seeds[@]}";
+do
+    if [ "$is_cuda" = true ]; then
+        CUDA_VISIBLE_DEVICES=$i_cuda python main_online.py --log_dir="${log_dir_pre}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed --adaptive_comp uni &
+        if [ "$i_cuda" -lt "$N_cuda" ]; then
+            i_cuda=$((i_cuda+1))
+        else
+    	i_cuda=1
+    	wait
+        fi
+    else
+        # WARNING: ELSE IS NOT TESTED YET
+        echo python main_online.py --log_dir="${log_dir_pre}_${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed --adaptive_comp uni
+    fi
+done
+wait
