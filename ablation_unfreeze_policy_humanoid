@@ -25,7 +25,7 @@ for seed in "${seeds[@]}";
 do
     if [ "$is_cuda" = true ]; then
         CUDA_VISIBLE_DEVICES=$i_cuda python main_online.py --log_dir="${log_dir_pre}__${seed}" --env_name=${env_name} --algorithm=pex --ckpt_path="$ckpt_path" --seed=$seed &
-        if [ "$i_cuda" -lt 4 ]; then
+        if [ "$i_cuda" -lt "$N_cuda" ]; then
     	echo $i_cuda
             i_cuda=$((i_cuda+1))
         else
