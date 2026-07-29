@@ -105,6 +105,22 @@ def main(args):
     elif algorithm_option == "PEX":
         double_buffer = True
         assert args.ckpt_path, "need to provide a valid checkpoint path"
+        alg = PEX(
+            critic=DoubleCriticNetwork(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            vf=ValueNetwork(obs_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            policy=policy,
+            optimizer_ctor=lambda params: torch.optim.Adam(params, lr=args.learning_rate),
+            tau=args.tau,
+            beta=args.beta,
+            target_update_rate=args.target_update_rate,
+            discount=args.discount,
+            ckpt_path=args.ckpt_path,
+            inv_temperature=args.inv_temperature,
+        )
+    
+    elif algorithm_option == "PEX-GOUPED":
+        double_buffer = True
+        assert args.ckpt_path, "need to provide a valid checkpoint path"
         alg = PEXGrouped(
             critic=DoubleCriticNetwork(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
             vf=ValueNetwork(obs_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
@@ -165,12 +181,13 @@ def main(args):
         # jk59: per episode counter
         offline_policy_count = 0
         online_policy_count = 0
-        
-        offline_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
-        online_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
+
+        if "PEX-GROUPED" in algorithm_option:
+            offline_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
+            online_policy_count_grouped = dict.fromkeys(HUMANOID_JOINT_GROUPS.keys(), 0)
 
         while not done:
-            if algorithm_option == "PEX":
+            if "PEX" in algorithm_option:
                 action, choice = alg.select_action(
                     torchify(state).to(DEFAULT_DEVICE),
                     return_policy_selection=True
@@ -179,10 +196,10 @@ def main(args):
                 online_policy_count += sum(count != 0 for count in choice) / len(choice)
 
                 
-
-                for i, (group_name, indices) in enumerate(HUMANOID_JOINT_GROUPS.items()):
-                    offline_policy_count_grouped[group_name] += choice[i] == 0
-                    online_policy_count_grouped[group_name] += choice[i] != 0
+                if "PEX-GROUPED" in algorithm_option:
+                    for i, (group_name, indices) in enumerate(HUMANOID_JOINT_GROUPS.items()):
+                        offline_policy_count_grouped[group_name] += choice[i] == 0
+                        online_policy_count_grouped[group_name] += choice[i] != 0
 
             else:
                 action, _ = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
@@ -212,9 +229,11 @@ def main(args):
                 print("Episode: {}, total env-steps: {}".format(i_episode, total_numsteps))
                 eval_metrics = eval_policy(env, args.env_name, alg, args.max_episode_steps, args.eval_episode_num)
                 eval_metrics['fall_count_training'] = fall_count / episode_steps * 100.0
-                for group_name in HUMANOID_JOINT_GROUPS.keys():
-                    eval_metrics[f'pex/offline_policy_percentage_{group_name}'] = (offline_policy_count_grouped[group_name] / episode_steps) * 100.0
-                    eval_metrics[f'pex/online_policy_percentage_{group_name}'] = (online_policy_count_grouped[group_name] / episode_steps) * 100.0
+
+                if "PEX-GROUPED" in algorithm_option:
+                    for group_name in HUMANOID_JOINT_GROUPS.keys():
+                        eval_metrics[f'pex/offline_policy_percentage_{group_name}'] = (offline_policy_count_grouped[group_name] / episode_steps) * 100.0
+                        eval_metrics[f'pex/online_policy_percentage_{group_name}'] = (online_policy_count_grouped[group_name] / episode_steps) * 100.0
 
                 if eval_metrics is not None:
                     wandb.log(
