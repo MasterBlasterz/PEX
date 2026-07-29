@@ -7,6 +7,7 @@ import random
 import wandb
 
 from pex.algorithms.pex_grouped import PEXGrouped
+from pex.algorithms.pex import PEX
 from pex.algorithms.iql_online import IQL_online
 from pex.networks.policy import GaussianPolicy
 from pex.networks.value_functions import DoubleCriticNetwork, ValueNetwork
@@ -111,8 +112,7 @@ def main(args):
             ckpt_path=args.ckpt_path,
             inv_temperature=args.inv_temperature,
         )
-    
-    elif algorithm_option == "PEX-GOUPED":
+    elif algorithm_option == "PEX-GROUPED":
         double_buffer = True
         assert args.ckpt_path, "need to provide a valid checkpoint path"
         alg = PEXGrouped(
@@ -158,6 +158,7 @@ def main(args):
             "ckpt_path": args.ckpt_path,
             "is_cuda": torch.cuda.is_available(),
             "log_dir": args.log_dir,
+            "adaptive_comp": args.adaptive_comp,
         },
     )
 
@@ -184,16 +185,18 @@ def main(args):
             if "PEX" in algorithm_option:
                 action, choice = alg.select_action(
                     torchify(state).to(DEFAULT_DEVICE),
-                    return_policy_selection=True
+                    return_policy_selection=True, adaptive_comp=args.adaptive_comp
                 )
-                offline_policy_count += sum(count == 0 for count in choice) / len(choice)
-                online_policy_count += sum(count != 0 for count in choice) / len(choice)
-
                 
                 if "PEX-GROUPED" in algorithm_option:
                     for i, (group_name, indices) in enumerate(HUMANOID_JOINT_GROUPS.items()):
                         offline_policy_count_grouped[group_name] += choice[i] == 0
                         online_policy_count_grouped[group_name] += choice[i] != 0
+                        offline_policy_count += sum(count == 0 for count in choice) / len(choice)
+                        online_policy_count += sum(count != 0 for count in choice) / len(choice)
+                else:
+                    offline_policy_count += choice == 0
+                    online_policy_count += choice != 0
 
             else:
                 action, _ = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
@@ -288,5 +291,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval_episode_num', type=int, default=10,
                         help='Number of evaluation episodes (default: 10)')
     parser.add_argument('--max_episode_steps', type=int, default=1_000)
+    parser.add_argument('--adaptive_comp', type=str, default='greedy', choices=['greedy', 'uni'],)
 
     main(parser.parse_args())

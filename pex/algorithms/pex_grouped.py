@@ -42,7 +42,6 @@ class PEXGrouped(IQL):
         self.policy_offline = copy.deepcopy(self.policy).to(DEFAULT_DEVICE)
         self._inv_temperature = inv_temperature
 
-        # {group_name: list_of_action_dim_indices}
         self.joint_groups = joint_groups or HUMANOID_JOINT_GROUPS
         self._group_list = list(self.joint_groups.values())
 
@@ -123,9 +122,9 @@ class PEXGrouped(IQL):
             else:
                 return final_action.squeeze(0)
         elif return_policy_selection:
-            return final_action.squeeze(0), policy_choice
+            return final_action.squeeze(0), a1.squeeze(0), a2.squeeze(0), policy_choice
         else:
-            return final_action.squeeze(0)
+            return final_action.squeeze(0), a1.squeeze(0), a2.squeeze(0)
 
     def policy_update(self, observations, adv, actions):
         actions = self.select_action(observations)
