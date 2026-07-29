@@ -234,26 +234,23 @@ def main(args):
                     for group_name in HUMANOID_JOINT_GROUPS.keys():
                         eval_metrics[f'pex/offline_policy_percentage_{group_name}'] = (offline_policy_count_grouped[group_name] / episode_steps) * 100.0
                         eval_metrics[f'pex/online_policy_percentage_{group_name}'] = (online_policy_count_grouped[group_name] / episode_steps) * 100.0
+                if "PEX" in algorithm_option:
+                    offline_pct = (offline_policy_count / episode_steps) * 100.0
+                    online_pct = (online_policy_count / episode_steps) * 100.0
+
+                    eval_metrics['pex/offline_policy_select_count'] = offline_policy_count
+                    eval_metrics['pex/online_policy_select_count'] = online_policy_count
+                    eval_metrics['pex/offline_policy_percentage'] = offline_pct
+                    eval_metrics['pex/online_policy_percentage'] = online_pct
+                    eval_metrics['train/episode_reward'] = episode_reward
+                    eval_metrics['train/episode_steps'] = episode_steps
+
 
                 if eval_metrics is not None:
                     wandb.log(
                         {f"eval/{k}": v for k, v in eval_metrics.items()},
                         step=total_numsteps,
                     )
-
-        # jk59: log policy selection distribution for pex, for safety episode_steps > 0
-        if algorithm_option == "PEX" and episode_steps > 0:
-            offline_pct = (offline_policy_count / episode_steps) * 100.0
-            online_pct = (online_policy_count / episode_steps) * 100.0
-
-            wandb.log({
-                "pex/offline_policy_select_count": offline_policy_count,
-                "pex/online_policy_select_count": online_policy_count,
-                "pex/offline_policy_percentage": offline_pct,
-                "pex/online_policy_percentage": online_pct,
-                "train/episode_reward": episode_reward,
-                "train/episode_steps": episode_steps,
-            }, step=total_numsteps)
 
         if total_numsteps > args.total_env_steps:
             break
