@@ -1,8 +1,3 @@
-from pathlib import Path
-
-import gymnasium as gym
-import minari
-import numpy as np
 import itertools
 import os
 import torch
@@ -11,7 +6,7 @@ from tqdm import trange
 import random
 import wandb
 
-from pex.algorithms.pex import PEXGrouped
+from pex.algorithms.pex_grouped import PEXGrouped
 from pex.algorithms.iql_online import IQL_online
 from pex.networks.policy import GaussianPolicy
 from pex.networks.value_functions import DoubleCriticNetwork, ValueNetwork
@@ -42,7 +37,6 @@ def main(args):
 
 
     env, dataset, reward_transformer = get_env_and_dataset(args.env_name, args.max_episode_steps)
-    dataset_size = dataset['observations'].shape[0]
     obs_dim = dataset['observations'].shape[1]
     act_dim = dataset['actions'].shape[1]
 
