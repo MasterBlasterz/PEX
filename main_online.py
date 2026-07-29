@@ -199,7 +199,7 @@ def main(args):
                     online_policy_count += choice != 0
 
             else:
-                action, _ = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
+                action = alg.select_action(torchify(state).to(DEFAULT_DEVICE))
             action = action.detach().cpu().numpy()
 
             if len(memory) > args.initial_collection_steps:
