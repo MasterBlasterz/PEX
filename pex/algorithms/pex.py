@@ -46,11 +46,10 @@ class PEX(IQL):
 
         
     def select_action(self, observations, evaluate=False, return_all_actions=False,
-                       return_policy_selection=False, adaptive_comp='greedy'):
+                       return_policy_selection=False, ablation='none'):
         """
-        adaptive_comp:
-            'greedy' - value-weighted softmax composition (original PEX), sampled
-                       with epsilon-greedy exploration on top.
+        ablation:
+            'none'   - standard PEX behavior
             'uni'    - uniform distribution over {offline, online} policy, ignoring Q.
         """
         is_batch = (observations.dim() == 2)
@@ -67,7 +66,7 @@ class PEX(IQL):
 
         q = torch.stack([q1, q2], dim=-1)
 
-        if adaptive_comp == 'greedy':
+        if ablation == 'none':
             logits = q * self._inv_temperature
             w_dist = torch.distributions.Categorical(logits=logits)
             if evaluate:
@@ -75,14 +74,14 @@ class PEX(IQL):
             else:
                 w = epsilon_greedy_sample(w_dist, eps=1.0)
 
-        elif adaptive_comp == 'uni':
+        elif ablation == 'uni':
             # Uniform 50/50 selection, ignoring Q entirely.
             probs = torch.full_like(q, 0.5)
             w_dist = torch.distributions.Categorical(probs=probs)
             w = w_dist.sample()
 
         else:
-            raise ValueError(f"Unknown adaptive_comp mode: {adaptive_comp}")
+            raise ValueError(f"Unknown ablation mode: {ablation}")
 
         # jk59: get selected policy (0 for offline, 1 for online)
         if return_policy_selection:

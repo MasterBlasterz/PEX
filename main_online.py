@@ -158,7 +158,7 @@ def main(args):
             "ckpt_path": args.ckpt_path,
             "is_cuda": torch.cuda.is_available(),
             "log_dir": args.log_dir,
-            "adaptive_comp": args.adaptive_comp,
+            "ablation": args.ablation,
         },
     )
 
@@ -242,7 +242,6 @@ def main(args):
                     eval_metrics['train/episode_reward'] = episode_reward
                     eval_metrics['train/episode_steps'] = episode_steps
 
-
                 if eval_metrics is not None:
                     wandb.log(
                         {f"eval/{k}": v for k, v in eval_metrics.items()},
@@ -291,6 +290,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval_episode_num', type=int, default=10,
                         help='Number of evaluation episodes (default: 10)')
     parser.add_argument('--max_episode_steps', type=int, default=1_000)
-    parser.add_argument('--adaptive_comp', type=str, default='greedy', choices=['greedy', 'uni'],)
+    parser.add_argument('--ablation', type=str, default='none', choices=['none', 'uni',],)
 
     main(parser.parse_args())
