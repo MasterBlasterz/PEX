@@ -58,3 +58,13 @@ mujoco/halfcheetah/medium-v0 | 3743118481 | 2274139555 | 2824913460
 mujoco/hopper/medium-v0 | 3743118481 | 2274139555 | 2824913460
 mujoco/walker2d/medium-v0 | 3743118481 | 2274139555 | 2824913460
 mujoco/humanoid/medium-v0 | 4257710153 | 2003530388
+
+## Ablations
+
+### Uniform Choice 
+
+Add ```--ablation uni``` to activate the ablation.
+
+### Humanoid Ablation
+
+Set the algorithm variable to ```pex_grouped```.

@@ -185,7 +185,7 @@ def main(args):
             if "PEX" in algorithm_option:
                 action, choice = alg.select_action(
                     torchify(state).to(DEFAULT_DEVICE),
-                    return_policy_selection=True, adaptive_comp=args.adaptive_comp
+                    return_policy_selection=True, ablation=args.ablation
                 )
                 
                 if "PEX-GROUPED" in algorithm_option:
