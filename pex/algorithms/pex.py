@@ -9,7 +9,7 @@ from pex.algorithms.iql import IQL, EXP_ADV_MAX
 class PEX(IQL):
     def __init__(self, critic, vf, policy, optimizer_ctor,
                  tau, beta, discount, target_update_rate, ckpt_path, inv_temperature,
-                 joint_groups=None, copy_to_target=False):
+                 joint_groups=None, copy_to_target=False, freeze_offline_policy=True):
         super().__init__(critic=critic, vf=vf, policy=policy,
                          optimizer_ctor=optimizer_ctor,
                          max_steps=None,
@@ -19,7 +19,10 @@ class PEX(IQL):
                          use_lr_scheduler=False)
 
         self.policy_offline = copy.deepcopy(self.policy).to(DEFAULT_DEVICE)
+        self.policy_offline_optimizer = optimizer_ctor(self.policy_offline.parameters())
         self._inv_temperature = inv_temperature
+
+        self.freeze_offline_policy = freeze_offline_policy
 
 
         # load checkpoint if ckpt_path is not None
@@ -119,3 +122,13 @@ class PEX(IQL):
         self.policy_optimizer.step()
         if self.use_lr_scheduler:
             self.policy_lr_schedule.step()
+
+        if self.freeze_offline_policy:
+            return
+        
+        policy_offline_out = self.policy_offline(observations)
+        bc_losses_offline = -policy_offline_out.log_prob(actions.detach())
+        policy_offline_loss = torch.mean(exp_adv * bc_losses_offline)
+        self.policy_offline_optimizer.zero_grad(set_to_none=True)
+        policy_offline_loss.backward()
+        self.policy_offline_optimizer.step()

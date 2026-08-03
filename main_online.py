@@ -142,6 +142,22 @@ def main(args):
             ckpt_path=args.ckpt_path,
             copy_policy=False
         )
+    elif algorithm_option == "UNFREEZE-POLICY":
+        double_buffer = True
+        assert args.ckpt_path, "need to provide a valid checkpoint path"
+        alg = PEX(
+            critic=DoubleCriticNetwork(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            vf=ValueNetwork(obs_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            policy=policy,
+            optimizer_ctor=lambda params: torch.optim.Adam(params, lr=args.learning_rate),
+            tau=args.tau,
+            beta=args.beta,
+            target_update_rate=args.target_update_rate,
+            discount=args.discount,
+            ckpt_path=args.ckpt_path,
+            inv_temperature=args.inv_temperature,
+            freeze_offline_policy=False
+        )
 
     wandb.init(
         entity="fryan-nr",
