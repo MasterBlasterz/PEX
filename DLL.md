@@ -61,6 +61,14 @@ mujoco/humanoid/medium-v0 | 4257710153 | 2003530388
 
 ## Ablations
 
+### Policy Transfer
+
+Set the algorithm variable to ```policy-transfer```.
+
+### Unfreeze Policy
+
+Set the algorithm variable to ```unfreeze-policy```.
+
 ### Uniform Choice 
 
 Add ```--ablation uni``` to activate the ablation.
