@@ -5,7 +5,7 @@ from .iql import IQL
 
 class IQL_online(IQL):
     def __init__(self, critic, vf, policy, optimizer_ctor,
-                 tau, beta, discount, target_update_rate, ckpt_path, copy_to_target=True):
+                 tau, beta, discount, target_update_rate, ckpt_path, copy_to_target=True, copy_policy=True):
 
         super().__init__(critic=critic, vf=vf, policy=policy,
                          optimizer_ctor=optimizer_ctor,
@@ -24,10 +24,11 @@ class IQL_online(IQL):
             checkpoint = torch.load(ckpt_path, map_location=map_location)
 
             # extract sub-dictionary
-            policy_state_dict = extract_sub_dict("policy", checkpoint)
-            critic_state_dict = extract_sub_dict("critic", checkpoint)
+            if copy_policy:
+                policy_state_dict = extract_sub_dict("policy", checkpoint)
+                self.policy.load_state_dict(policy_state_dict)
 
-            self.policy.load_state_dict(policy_state_dict)
+            critic_state_dict = extract_sub_dict("critic", checkpoint)
             self.critic.load_state_dict(critic_state_dict)
             if copy_to_target:
                 self.target_critic.load_state_dict(critic_state_dict)

@@ -127,6 +127,21 @@ def main(args):
             ckpt_path=args.ckpt_path,
             inv_temperature=args.inv_temperature,
         )
+    elif algorithm_option == "POLICY-TRANSFER":
+        double_buffer = True
+        assert args.ckpt_path, "need to provide a valid checkpoint path"
+        alg = IQL_online(
+            critic=DoubleCriticNetwork(obs_dim, act_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            vf=ValueNetwork(obs_dim, hidden_dim=args.hidden_dim, n_hidden=args.hidden_num),
+            policy=policy,
+            optimizer_ctor=lambda params: torch.optim.Adam(params, lr=args.learning_rate),
+            tau=args.tau,
+            beta=args.beta,
+            target_update_rate=args.target_update_rate,
+            discount=args.discount,
+            ckpt_path=args.ckpt_path,
+            copy_policy=False
+        )
 
     wandb.init(
         entity="fryan-nr",
@@ -258,7 +273,7 @@ def main(args):
 if __name__ == '__main__':
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument('--algorithm', required=True)  # ['direct', 'buffer', 'pex']
+    parser.add_argument('--algorithm', required=True)  # ['direct', 'buffer', 'pex', 'pex-grouped', 'policy-transfer', 'scratch']
     parser.add_argument('--env_name', required=True)
     parser.add_argument('--log_dir', required=True)
     parser.add_argument('--seed', type=int, default=None)
@@ -290,6 +305,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval_episode_num', type=int, default=10,
                         help='Number of evaluation episodes (default: 10)')
     parser.add_argument('--max_episode_steps', type=int, default=1_000)
-    parser.add_argument('--ablation', type=str, default='none', choices=['none', 'uni',],)
+    parser.add_argument('--ablation', type=str, default='none', choices=['none', 'uni', 'unfreeze-policy'],)
 
     main(parser.parse_args())
