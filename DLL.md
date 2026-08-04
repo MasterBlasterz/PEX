@@ -21,10 +21,10 @@ Set ```root_dir``` to the path where the experimental results will be saved.
 Then run:
 
 ```
-python main_offline.py --env_name mujoco/halfcheetah/medium-v0 --eval_period 10000 --log_dir=$root_dir/halfcheetah-medium-v0_offline_run1
+python main_offline.py --env_name mujoco/halfcheetah/medium-v0 --log_dir=$root_dir/halfcheetah-medium-v0_offline_run1
 ```
 
-For reproduction of our results add ```--seed XXX``` to the call.
+For reproduction of our results add ```--seed XXX``` to the call and exchange the ```--env_name``` accordingly.
 
 | Environment | Seed 1 | Seed 2 | Seed 3
 | - | - | - | - |
@@ -57,7 +57,7 @@ For reproduction of our results add ```--seed XXX``` to the call.
 mujoco/halfcheetah/medium-v0 | 3743118481 | 2274139555 | 2824913460
 mujoco/hopper/medium-v0 | 3743118481 | 2274139555 | 2824913460
 mujoco/walker2d/medium-v0 | 3743118481 | 2274139555 | 2824913460
-mujoco/humanoid/medium-v0 | 4257710153 | 2003530388
+mujoco/humanoid/medium-v0 | 4257710153 | 2003530388 | 2454176472
 
 ## Ablations
 
