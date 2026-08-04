@@ -62,7 +62,7 @@ class PEXGrouped(IQL):
                 self.target_critic.load_state_dict(extract_sub_dict("target_critic", checkpoint))
 
     def select_action(self, observations, evaluate=False,
-                       return_all_actions=False, return_policy_selection=False):
+                       return_all_actions=False, return_policy_selection=False, ablation='none'):
         is_batch = (observations.dim() == 2)
         observations = observations.unsqueeze(0)
 
@@ -70,10 +70,6 @@ class PEXGrouped(IQL):
         dist = self.policy(observations)
         eps = 0.1 if evaluate else 1.0
         a2 = epsilon_greedy_sample(dist, eps=eps)                       # [B,1,D] online
-
-        # --- Baseline: whole-action Q for reference / logging ---
-        q1_full = self.critic.min(observations, a1)
-        q2_full = self.critic.min(observations, a2)
 
         # --- Per-group marginal swap evaluation ---
         # Start from a1 as the base action, then test swapping each group
@@ -96,11 +92,11 @@ class PEXGrouped(IQL):
             q_base = self.critic.min(observations, base_action)   # group = offline
             q_cand = self.critic.min(observations, candidate)     # group = online
 
-            q_group = torch.stack([q_base, q_cand], dim=-1)       # [B,1,2]
+            q_group = torch.stack([q_base, q_cand], dim=-1)
             logits = q_group * self._inv_temperature
             w_dist = torch.distributions.Categorical(logits=logits)
             w_eps = 0.1 if evaluate else 1.0
-            w_g = epsilon_greedy_sample(w_dist, eps=w_eps)         # [B,1] in {0,1}
+            w_g = epsilon_greedy_sample(w_dist, eps=w_eps)
 
             group_choice[..., g_idx] = w_g
 
